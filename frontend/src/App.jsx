@@ -11,6 +11,10 @@ function getErrorMessage(error, fallback = "Request failed") {
   return error instanceof Error ? error.message : fallback;
 }
 
+function getEmployeeListFromResponse(res) {
+  return Array.isArray(res?.data) ? res.data : [];
+}
+
 async function api(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
@@ -241,7 +245,7 @@ export default function App() {
   async function loadEmployees() {
     setEmployeesState("loading");
     const res = await api("/employees");
-    const list = Array.isArray(res?.data) ? res.data : [];
+    const list = getEmployeeListFromResponse(res);
     setEmployees(list);
     setEmployeesState(list.length === 0 ? "empty" : "");
   }
@@ -278,17 +282,36 @@ export default function App() {
       }
       setEmployeeForm(initialEmployeeForm);
       setEmployeeMsg({ text: "Employee created successfully.", type: "success" });
-      await Promise.allSettled([loadEmployees(), loadDashboard()]);
+      await Promise.all([loadEmployees(), loadDashboard()]);
     } catch (err) { setEmployeeMsg({ text: getErrorMessage(err), type: "error" }); }
   }
   async function handleCreateAttendance(e) {
     e.preventDefault();
     setAttendanceMsg({ text: "Saving…", type: "" });
     try {
+      const employeesRes = await api("/employees");
+      const latestEmployees = getEmployeeListFromResponse(employeesRes);
+      setEmployees(latestEmployees);
+      setEmployeesState(latestEmployees.length === 0 ? "empty" : "");
+
+      const employeeExists = latestEmployees.some((emp) => emp.employee_id === attendanceForm.employeeId);
+      if (!employeeExists) {
+        setAttendanceMsg({ text: "Selected employee is no longer available. Please select again.", type: "error" });
+        return;
+      }
+
       await api("/attendance", { method: "POST", body: JSON.stringify(attendanceForm) });
       setAttendanceMsg({ text: "Attendance saved.", type: "success" });
       await Promise.all([loadAttendance(filterForm), loadEmployees(), loadDashboard()]);
-    } catch (err) { setAttendanceMsg({ text: getErrorMessage(err), type: "error" }); }
+    } catch (err) {
+      const message = getErrorMessage(err);
+      if (message === "Employee not found") {
+        await Promise.allSettled([loadEmployees(), loadAttendance(filterForm), loadDashboard()]);
+        setAttendanceMsg({ text: "Employee list changed on server. Please select employee again.", type: "error" });
+        return;
+      }
+      setAttendanceMsg({ text: message, type: "error" });
+    }
   }
   async function handleDeleteEmployee(id) {
     if (!window.confirm(`Delete employee ${id}? This will also remove their attendance records.`)) return;
