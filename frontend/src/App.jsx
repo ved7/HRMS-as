@@ -267,10 +267,18 @@ export default function App() {
     e.preventDefault();
     setEmployeeMsg({ text: "Saving…", type: "" });
     try {
-      await api("/employees", { method: "POST", body: JSON.stringify(employeeForm) });
+      const res = await api("/employees", { method: "POST", body: JSON.stringify(employeeForm) });
+      const created = res?.data && typeof res.data === "object" ? res.data : null;
+      if (created?.employee_id) {
+        setEmployees((prev) => {
+          if (prev.some((emp) => emp.employee_id === created.employee_id)) return prev;
+          return [created, ...prev];
+        });
+        setEmployeesState("");
+      }
       setEmployeeForm(initialEmployeeForm);
       setEmployeeMsg({ text: "Employee created successfully.", type: "success" });
-      await Promise.all([loadEmployees(), loadDashboard()]);
+      await Promise.allSettled([loadEmployees(), loadDashboard()]);
     } catch (err) { setEmployeeMsg({ text: getErrorMessage(err), type: "error" }); }
   }
   async function handleCreateAttendance(e) {
@@ -341,22 +349,22 @@ export default function App() {
               <form className="form-stack" onSubmit={handleCreateEmployee}>
                 <div className="field">
                   <label className="field-label">Employee ID</label>
-                  <input type="text" placeholder="e.g. EMP-001" required value={employeeForm.employeeId}
+                  <input type="text" required value={employeeForm.employeeId}
                     onChange={e => setEmployeeForm(p => ({ ...p, employeeId: e.target.value }))} />
                 </div>
                 <div className="field">
                   <label className="field-label">Full Name</label>
-                  <input type="text" placeholder="Jane Doe" required value={employeeForm.fullName}
+                  <input type="text" required value={employeeForm.fullName}
                     onChange={e => setEmployeeForm(p => ({ ...p, fullName: e.target.value }))} />
                 </div>
                 <div className="field">
                   <label className="field-label">Email Address</label>
-                  <input type="email" placeholder="jane@company.com" required value={employeeForm.email}
+                  <input type="email" required value={employeeForm.email}
                     onChange={e => setEmployeeForm(p => ({ ...p, email: e.target.value }))} />
                 </div>
                 <div className="field">
                   <label className="field-label">Department</label>
-                  <input type="text" placeholder="Engineering" required value={employeeForm.department}
+                  <input type="text" required value={employeeForm.department}
                     onChange={e => setEmployeeForm(p => ({ ...p, department: e.target.value }))} />
                 </div>
                 <button type="submit" className="btn btn-primary">Create Employee</button>

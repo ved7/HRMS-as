@@ -12,7 +12,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "hrms_lite.db")
+DB_PATH = os.environ.get("HRMS_DB_PATH", "").strip()
+if not DB_PATH:
+    if os.environ.get("VERCEL"):
+        DB_PATH = "/tmp/hrms_lite.db"
+    else:
+        DB_PATH = os.path.join(os.path.dirname(__file__), "hrms_lite.db")
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 VALID_STATUS = {"Present", "Absent"}
 
