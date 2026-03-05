@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+.pytest_cache/
+backend/hrms_lite.db
+.DS_Store
+
+frontend/.vercel/
+frontend/node_modules/
+frontend/dist/
