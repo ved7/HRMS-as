@@ -1,10 +1,10 @@
 # HRMS Lite
 
-A lightweight full-stack Human Resource Management System for managing employees and daily attendance.
+A full-stack Human Resource Management System for managing employees and daily attendance.
 
 ## Submission Links
 
-- Live Frontend URL: `TO_BE_ADDED`
+- Live Frontend URL: 'ADDED'
 - Hosted Backend API URL: `TO_BE_ADDED`
 - GitHub Repository: `TO_BE_ADDED`
 
